@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, Card, Title, HelperText } from 'react-native-paper';
+import api from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const logo = "https://marutirefrigeration.in/wp-content/uploads/2023/09/MR-Logo.webp";
 
@@ -11,7 +13,7 @@ const LoginScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!phone || !password) {
       setError('Please fill in all fields');
       return;
@@ -25,20 +27,33 @@ const LoginScreen = ({ navigation }) => {
     setLoading(true);
     setError('');
 
-    // Simple authentication logic
-    if (phone === '1234567890' && password === 'admin123') {
-      navigation.replace('AdminFlow');
-    } else if (phone === '9876543210' && password === 'user123') {
-      navigation.replace('UserFlow');
-    } else {
-      setError('Invalid phone number or password');
+    try {
+      const res = await api.post('/auth/login', { phone, password });
+      if (res.data?.token) {
+        const { token } = res.data;
+        await AsyncStorage.setItem('authToken', token);
+        const role = res.data.user.role;
+        if (role === 'admin') {
+          navigation.replace('AdminFlow');
+        } else {
+          navigation.replace('UserFlow');
+        }
+      } else {
+        setError('Unexpected response from server');
+      }
+    } catch (err) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Server or network error');
+      }
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -48,7 +63,7 @@ const LoginScreen = ({ navigation }) => {
           style={styles.logo}
           resizeMode="contain"
         />
-        
+
         <Card style={styles.card}>
           <Card.Content>
             <Title style={styles.title}>Welcome Back</Title>
@@ -62,7 +77,7 @@ const LoginScreen = ({ navigation }) => {
               style={styles.input}
               keyboardType="phone-pad"
               maxLength={10}
-              // left={<TextInput.Icon icon="phone" />}
+            // left={<TextInput.Icon icon="phone" />}
             />
 
             <TextInput

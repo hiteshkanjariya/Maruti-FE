@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText } from 'react-native-paper';
 import Complaint from '../models/Complaint';
+import api from '../services/api';
 
 const ComplaintFormScreen = ({ route, navigation }) => {
   const { complaintId } = route.params || {};
@@ -10,17 +11,18 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   const [error, setError] = useState('');
 
   // Form fields
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerAddress, setCustomerAddress] = useState('');
-  const [acType, setAcType] = useState('');
-  const [acBrand, setAcBrand] = useState('');
-  const [acModel, setAcModel] = useState('');
-  const [acSerialNumber, setAcSerialNumber] = useState('');
+  const [title, setTitle] = useState('AC Not Cooling');
+  const [description, setDescription] = useState('The AC is not cooling properly');
+  const [customerName, setCustomerName] = useState('John Doe');
+  const [customerPhone, setCustomerPhone] = useState('1234567890');
+  const [customerAddress, setCustomerAddress] = useState('123 Main St');
+  const [acType, setAcType] = useState('Split');
+  const [acBrand, setAcBrand] = useState('LG');
+  const [acModel, setAcModel] = useState('XYZ123');
+  const [acSerialNumber, setAcSerialNumber] = useState('SN123456');
   const [serviceType, setServiceType] = useState('repair');
   const [priority, setPriority] = useState('medium');
+  const [status, setStaus] = useState("open");
   const [amount, setAmount] = useState('');
   const [technicianNotes, setTechnicianNotes] = useState('');
 
@@ -39,6 +41,7 @@ const ComplaintFormScreen = ({ route, navigation }) => {
         acSerialNumber: 'SN123456',
         serviceType: 'repair',
         priority: 'high',
+        status: 'open',
         payment: {
           amount: 1500,
           status: 'unpaid',
@@ -64,7 +67,7 @@ const ComplaintFormScreen = ({ route, navigation }) => {
     }
   }, [complaintId]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title || !description || !customerName || !customerPhone) {
       setError('Please fill in all required fields');
       return;
@@ -73,34 +76,41 @@ const ComplaintFormScreen = ({ route, navigation }) => {
     setLoading(true);
     setError('');
 
-    const parsedAmount = parseFloat(amount) || 0;
+    try {
+      const response = await api.post(
+        'complaint',
+        {
+          title,
+          description,
+          customerName,
+          customerPhone,
+          customerAddress,
+          acType,
+          acBrand,
+          acModel,
+          acSerialNumber,
+          serviceType,
+          priority,
+          status,
+          payment: {
+            amount: parseFloat(amount) || 0,
+            status: 'unpaid',
+            method: 'cash',
+          },
+          technicianNotes,
+        }
+      );
 
-    const newComplaint = new Complaint({
-      ...complaint,
-      title,
-      description,
-      customerName,
-      customerPhone,
-      customerAddress,
-      acType,
-      acBrand,
-      acModel,
-      acSerialNumber,
-      serviceType,
-      priority,
-      payment: {
-        ...complaint.payment,
-        amount: parsedAmount,
-      },
-      technicianNotes,
-      updatedAt: new Date(),
-    });
-
-    console.log('Saving complaint:', newComplaint);
-
-    setLoading(false);
-    navigation.goBack();
+      console.log('Complaint created:', response.data);
+      navigation.goBack();
+    } catch (err) {
+      console.error('API error:', err.response?.data || err.message);
+      setError('Failed to create complaint. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -201,6 +211,18 @@ const ComplaintFormScreen = ({ route, navigation }) => {
               { value: 'low', label: 'Low' },
               { value: 'medium', label: 'Medium' },
               { value: 'high', label: 'High' },
+            ]}
+            style={styles.segmentedButtons}
+          />
+          <Text style={styles.label}>status</Text>
+          <SegmentedButtons
+            value={status}
+            onValueChange={setStaus}
+            buttons={[
+              { value: 'open', label: 'Open' },
+              { value: 'in_progress', label: 'In_progress' },
+              { value: 'done', label: 'Done' },
+              { value: 'closed', label: 'Closed' },
             ]}
             style={styles.segmentedButtons}
           />

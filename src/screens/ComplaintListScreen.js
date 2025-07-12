@@ -1,20 +1,30 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, ScrollView } from 'react-native';
-import { Appbar, Card, List, FAB, Snackbar, Text, Searchbar, Chip, Menu, Divider } from 'react-native-paper';
-
-const complaints = [
-  { id: 'c1', title: 'AC not cooling', status: 'open', assignedUser: 'Alice', priority: 'high', date: '2024-03-20' },
-  { id: 'c2', title: 'Leaking pipe', status: 'in_progress', assignedUser: 'Bob', priority: 'medium', date: '2024-03-19' },
-  { id: 'c3', title: 'Noisy fan', status: 'closed', assignedUser: 'Alice', priority: 'low', date: '2024-03-18' },
-];
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  Appbar,
+  Card,
+  List,
+  FAB,
+  Snackbar,
+  Text,
+  Searchbar,
+  Chip,
+  Menu,
+  Divider
+} from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
+import api from '../services/api';
 
 const ComplaintListScreen = ({ navigation }) => {
+  const [complaints, setComplaints] = useState([]);
+  console.log("🚀 ~ ComplaintListScreen ~ complaints:", complaints)
   const [searchQuery, setSearchQuery] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -34,11 +44,36 @@ const ComplaintListScreen = ({ navigation }) => {
     }
   };
 
-  const filteredComplaints = complaints.filter(complaint => {
-    const matchesSearch = complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         complaint.assignedUser.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || complaint.status === selectedStatus;
-    const matchesPriority = selectedPriority === 'all' || complaint.priority === selectedPriority;
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/complaint"); // Replace with real URL
+      console.log("🚀 ~ fetchComplaints ~ response:", response)
+      const data = await response.data.data;
+      setComplaints(data);
+    } catch (error) {
+      console.error(error);
+      setSnackbarMsg(error.response.data.message);
+      setSnackbarVisible(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchComplaints();
+    }, [])
+  );
+
+  const filteredComplaints = complaints?.filter((complaint) => {
+    const matchesSearch =
+      complaint?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      complaint?.assignedUser?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = selectedStatus === 'all' || complaint?.status === selectedStatus;
+    const matchesPriority = selectedPriority === 'all' || complaint?.priority === selectedPriority;
+
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
@@ -58,22 +93,22 @@ const ComplaintListScreen = ({ navigation }) => {
         onDismiss={() => setMenuVisible(false)}
         anchor={{ x: 0, y: 0 }}
       >
-        <Menu.Item 
+        <Menu.Item
           onPress={() => {
             setMenuVisible(false);
             navigation.navigate('ComplaintForm');
-          }} 
-          title="New Complaint" 
+          }}
+          title="New Complaint"
           leadingIcon="plus-circle"
         />
         <Divider />
-        <Menu.Item 
+        <Menu.Item
           onPress={() => {
             setSelectedStatus('all');
             setSelectedPriority('all');
             setMenuVisible(false);
-          }} 
-          title="Clear Filters" 
+          }}
+          title="Clear Filters"
           leadingIcon="filter-remove"
         />
       </Menu>
@@ -87,107 +122,76 @@ const ComplaintListScreen = ({ navigation }) => {
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <Chip
-            selected={selectedStatus === 'all'}
-            onPress={() => setSelectedStatus('all')}
-            style={styles.filterChip}
-          >
-            All
-          </Chip>
-          <Chip
-            selected={selectedStatus === 'open'}
-            onPress={() => setSelectedStatus('open')}
-            style={styles.filterChip}
-          >
-            Open
-          </Chip>
-          <Chip
-            selected={selectedStatus === 'in_progress'}
-            onPress={() => setSelectedStatus('in_progress')}
-            style={styles.filterChip}
-          >
-            In Progress
-          </Chip>
-          <Chip
-            selected={selectedStatus === 'closed'}
-            onPress={() => setSelectedStatus('closed')}
-            style={styles.filterChip}
-          >
-            Closed
-          </Chip>
+          {['all', 'open', 'in_progress', 'closed'].map((status) => (
+            <Chip
+              key={status}
+              selected={selectedStatus === status}
+              onPress={() => setSelectedStatus(status)}
+              style={styles.filterChip}
+            >
+              {status.replace('_', ' ').toUpperCase()}
+            </Chip>
+          ))}
         </ScrollView>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.priorityFilterContainer}>
-          <Chip
-            selected={selectedPriority === 'all'}
-            onPress={() => setSelectedPriority('all')}
-            style={styles.filterChip}
-          >
-            All Priorities
-          </Chip>
-          <Chip
-            selected={selectedPriority === 'high'}
-            onPress={() => setSelectedPriority('high')}
-            style={styles.filterChip}
-          >
-            High
-          </Chip>
-          <Chip
-            selected={selectedPriority === 'medium'}
-            onPress={() => setSelectedPriority('medium')}
-            style={styles.filterChip}
-          >
-            Medium
-          </Chip>
-          <Chip
-            selected={selectedPriority === 'low'}
-            onPress={() => setSelectedPriority('low')}
-            style={styles.filterChip}
-          >
-            Low
-          </Chip>
+          {['all', 'high', 'medium', 'low'].map((priority) => (
+            <Chip
+              key={priority}
+              selected={selectedPriority === priority}
+              onPress={() => setSelectedPriority(priority)}
+              style={styles.filterChip}
+            >
+              {priority === 'all' ? 'All Priorities' : priority.toUpperCase()}
+            </Chip>
+          ))}
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredComplaints}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card 
-            style={styles.card}
-            onPress={() => handleViewDetails(item)}
-          >
-            <Card.Content>
-              <View style={styles.cardHeader}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Chip
-                  mode="outlined"
-                  style={[styles.statusChip, { borderColor: getStatusColor(item.status) }]}
-                  textStyle={{ color: getStatusColor(item.status) }}
-                >
-                  {item.status.replace('_', ' ').toUpperCase()}
-                </Chip>
-              </View>
-              <View style={styles.cardDetails}>
-                <Text style={styles.assignedTo}>Assigned to: {item.assignedUser}</Text>
-                <Chip
-                  mode="outlined"
-                  style={[styles.priorityChip, { borderColor: getPriorityColor(item.priority) }]}
-                  textStyle={{ color: getPriorityColor(item.priority) }}
-                >
-                  {item.priority.toUpperCase()}
-                </Chip>
-              </View>
-              <Text style={styles.date}>Date: {item.date}</Text>
-            </Card.Content>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No complaints found</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6200ee" />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredComplaints}
+          keyExtractor={(item) => item._id || item.id}
+          renderItem={({ item }) => (
+            <Card style={styles.card} onPress={() => handleViewDetails(item)}>
+              <Card.Content>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  <Chip
+                    mode="outlined"
+                    style={[styles.statusChip, { borderColor: getStatusColor(item.status) }]}
+                    textStyle={{ color: getStatusColor(item.status) }}
+                  >
+                    {item?.status?.replace('_', ' ').toUpperCase()}
+                  </Chip>
+                </View>
+                <View style={styles.cardDetails}>
+                  <Text style={styles.assignedTo}>Assigned to: {item.assignedUser}</Text>
+                  <Chip
+                    mode="outlined"
+                    style={[styles.priorityChip, { borderColor: getPriorityColor(item.priority) }]}
+                    textStyle={{ color: getPriorityColor(item.priority) }}
+                  >
+                    {item.priority.toUpperCase()}
+                  </Chip>
+                </View>
+                <Text style={styles.date}>
+                  Date: {new Date(item.date || item.createdAt).toLocaleDateString()}
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No complaints found</Text>
+            </View>
+          }
+        />
+      )}
 
       <FAB
         style={styles.fab}
@@ -277,6 +281,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
-export default ComplaintListScreen; 
+export default ComplaintListScreen;

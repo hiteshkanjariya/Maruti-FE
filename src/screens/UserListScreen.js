@@ -1,21 +1,44 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Appbar, List, FAB, Snackbar, Card } from 'react-native-paper';
-
-const users = [
-  { id: '1', name: 'Alice', email: 'alice@mail.com', role: 'admin' },
-  { id: '2', name: 'Bob', email: 'bob@mail.com', role: 'user' },
-];
+import api from '../services/api';
 
 const UserListScreen = ({ navigation }) => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [users, setUsers] = useState([]);
   const [snackbarMsg, setSnackbarMsg] = useState('');
-
-  const handleEdit = (user) => navigation.navigate('UserForm', { user });
-  const handleDelete = (user) => {
-    setSnackbarMsg(`Deleted user: ${user.name}`);
-    setSnackbarVisible(true);
+  const [loading, setLoading] = useState(false);
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/user');
+      setUsers(res.data.data);
+    } catch (err) {
+      console.error("🚨 Error fetching users:", err);
+      setSnackbarMsg("Failed to load users");
+      setSnackbarVisible(true);
+    } finally {
+      setLoading(false);
+    }
   };
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', fetchUsers);
+    return unsubscribe;
+  }, [navigation]);
+  const handleEdit = (user) => navigation.navigate('UserForm', { user });
+  const handleDelete = async (user) => {
+    try {
+      await api.delete(`/user/${user._id}`);
+      setSnackbarMsg(`Deleted user: ${user.name}`);
+      setSnackbarVisible(true);
+      fetchUsers(); // Refresh user list after deletion
+    } catch (err) {
+      console.error("🚨 Error deleting user:", err);
+      setSnackbarMsg("Failed to delete user");
+      setSnackbarVisible(true);
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -24,13 +47,15 @@ const UserListScreen = ({ navigation }) => {
       </Appbar.Header>
       <FlatList
         data={users}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
+        refreshing={loading}
+        onRefresh={fetchUsers}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleEdit(item)}>
             <Card style={styles.card}>
               <List.Item
                 title={item.name}
-                description={`${item.email} | Role: ${item.role}`}
+                description={`Phone: ${item.phone} | Role: ${item.role}`}
                 left={props => <List.Icon {...props} icon={item.role === 'admin' ? 'account-tie' : 'account'} />}
                 right={props => (
                   <View style={{ flexDirection: 'row' }}>
@@ -44,6 +69,7 @@ const UserListScreen = ({ navigation }) => {
         )}
         ListEmptyComponent={<List.Item title="No users found." />}
       />
+
       <FAB
         style={styles.fab}
         icon="plus"

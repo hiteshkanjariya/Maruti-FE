@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Appbar, TextInput, Button, Snackbar, Text, Card, HelperText, IconButton, Menu } from 'react-native-paper';
+import api from '../services/api';
 
 const ROLES = [
   { label: 'Admin', value: 'admin' },
@@ -10,10 +11,10 @@ const ROLES = [
 
 const UserFormScreen = ({ navigation, route }) => {
   const { user } = route.params || {};
-  const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState(user?.name || 'hk');
+  const [phone, setPhone] = useState(user?.phone || '9904186384');
+  const [password, setPassword] = useState('hk');
+  const [confirmPassword, setConfirmPassword] = useState('hk');
   const [role, setRole] = useState(user?.role || 'user');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -21,9 +22,11 @@ const UserFormScreen = ({ navigation, route }) => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    // Validate inputs
+  const handleSave = async () => {
+    setError('');
+
     if (!name || !phone || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
@@ -38,14 +41,39 @@ const UserFormScreen = ({ navigation, route }) => {
       setError('Please enter a valid phone number');
       return;
     }
+    setLoading(true); // Start loading
 
-    // In a real app, save the user to your storage
-    console.log('Saving user:', { name, phone, role });
-    
-    setSnackbarMsg('User saved successfully!');
-    setSnackbarVisible(true);
-    setTimeout(() => navigation.goBack(), 1200);
+    try {
+      const payload = {
+        name,
+        phone,
+        password,
+        role,
+      };
+
+      let response;
+      if (user?._id) {
+        // Update existing user
+        response = await api.put(`/user/${user._id}`, payload);
+        setSnackbarMsg('User updated successfully!');
+      } else {
+        // Add new user
+        response = await api.post('/user', payload);
+        setSnackbarMsg('User added successfully!');
+      }
+
+      setSnackbarVisible(true);
+      setTimeout(() => navigation.goBack(), 1500);
+    } catch (err) {
+      console.log("🚨 ~ handleSave ~ err:", err);
+      const msg =
+        err.response?.data?.message || 'Failed to save user. Please try again.';
+      setError(msg);
+    } finally {
+      setLoading(false); // Stop loading
+    }
   };
+
 
   const getRoleLabel = (roleValue) => {
     const roleObj = ROLES.find(r => r.value === roleValue);
@@ -110,21 +138,21 @@ const UserFormScreen = ({ navigation, route }) => {
                 />
               }
             />
-
             <View style={styles.roleContainer}>
               <Text style={styles.roleLabel}>Role</Text>
-              <Button
-                mode="outlined"
-                onPress={() => setRoleMenuVisible(true)}
-                style={styles.roleButton}
-                icon="account-cog"
-              >
-                {getRoleLabel(role)}
-              </Button>
               <Menu
                 visible={roleMenuVisible}
                 onDismiss={() => setRoleMenuVisible(false)}
-                anchor={{ x: 0, y: 0 }}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => setRoleMenuVisible(true)}
+                    style={styles.roleButton}
+                    icon="account-cog"
+                  >
+                    {getRoleLabel(role)}
+                  </Button>
+                }
               >
                 {ROLES.map((roleOption) => (
                   <Menu.Item
@@ -134,22 +162,29 @@ const UserFormScreen = ({ navigation, route }) => {
                       setRoleMenuVisible(false);
                     }}
                     title={roleOption.label}
-                    leadingIcon={roleOption.value === 'admin' ? 'account-tie' : 
-                               roleOption.value === 'user' ? 'account' : 'account-tie-hat'}
+                    leadingIcon={
+                      roleOption.value === 'admin'
+                        ? 'account-tie'
+                        : roleOption.value === 'user'
+                          ? 'account'
+                          : 'account-tie-hat'
+                    }
                   />
                 ))}
               </Menu>
             </View>
-
             {error ? <HelperText type="error">{error}</HelperText> : null}
 
             <Button
               mode="contained"
               onPress={handleSave}
               style={styles.button}
+              loading={loading}
+              disabled={loading}
             >
               {user ? 'Update User' : 'Add User'}
             </Button>
+
           </Card.Content>
         </Card>
       </ScrollView>
