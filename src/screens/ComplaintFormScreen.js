@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText } from 'react-native-paper';
+import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText, ActivityIndicator } from 'react-native-paper';
 import Complaint from '../models/Complaint';
 import api from '../services/api';
 
 const ComplaintFormScreen = ({ route, navigation }) => {
   const { complaintId } = route.params || {};
+  console.log("🚀 ~ ComplaintFormScreen ~ complaintId:", complaintId)
   const [complaint, setComplaint] = useState(new Complaint());
   const [loading, setLoading] = useState(false);
+  const [getLoading, setGetLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Form fields
@@ -26,46 +28,142 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   const [amount, setAmount] = useState('');
   const [technicianNotes, setTechnicianNotes] = useState('');
 
+  // useEffect(() => {
+  //   if (complaintId) {
+  //     const mockComplaint = new Complaint({
+  //       id: complaintId,
+  //       title: 'AC Not Cooling',
+  //       description: 'The AC is not cooling properly',
+  //       customerName: 'John Doe',
+  //       customerPhone: '1234567890',
+  //       customerAddress: '123 Main St',
+  //       acType: 'Split',
+  //       acBrand: 'LG',
+  //       acModel: 'XYZ123',
+  //       acSerialNumber: 'SN123456',
+  //       serviceType: 'repair',
+  //       priority: 'high',
+  //       status: 'open',
+  //       payment: {
+  //         amount: 1500,
+  //         status: 'unpaid',
+  //         method: 'cash',
+  //       },
+  //       technicianNotes: 'Initial inspection required',
+  //     });
+
+  //     setComplaint(mockComplaint);
+  //     setTitle(mockComplaint.title);
+  //     setDescription(mockComplaint.description);
+  //     setCustomerName(mockComplaint.customerName);
+  //     setCustomerPhone(mockComplaint.customerPhone);
+  //     setCustomerAddress(mockComplaint.customerAddress);
+  //     setAcType(mockComplaint.acType);
+  //     setAcBrand(mockComplaint.acBrand);
+  //     setAcModel(mockComplaint.acModel);
+  //     setAcSerialNumber(mockComplaint.acSerialNumber);
+  //     setServiceType(mockComplaint.serviceType);
+  //     setPriority(mockComplaint.priority);
+  //     setAmount(mockComplaint.payment.amount.toString());
+  //     setTechnicianNotes(mockComplaint.technicianNotes);
+  //   }
+  // }, [complaintId]);
   useEffect(() => {
     if (complaintId) {
-      const mockComplaint = new Complaint({
-        id: complaintId,
-        title: 'AC Not Cooling',
-        description: 'The AC is not cooling properly',
-        customerName: 'John Doe',
-        customerPhone: '1234567890',
-        customerAddress: '123 Main St',
-        acType: 'Split',
-        acBrand: 'LG',
-        acModel: 'XYZ123',
-        acSerialNumber: 'SN123456',
-        serviceType: 'repair',
-        priority: 'high',
-        status: 'open',
-        payment: {
-          amount: 1500,
-          status: 'unpaid',
-          method: 'cash',
-        },
-        technicianNotes: 'Initial inspection required',
-      });
 
-      setComplaint(mockComplaint);
-      setTitle(mockComplaint.title);
-      setDescription(mockComplaint.description);
-      setCustomerName(mockComplaint.customerName);
-      setCustomerPhone(mockComplaint.customerPhone);
-      setCustomerAddress(mockComplaint.customerAddress);
-      setAcType(mockComplaint.acType);
-      setAcBrand(mockComplaint.acBrand);
-      setAcModel(mockComplaint.acModel);
-      setAcSerialNumber(mockComplaint.acSerialNumber);
-      setServiceType(mockComplaint.serviceType);
-      setPriority(mockComplaint.priority);
-      setAmount(mockComplaint.payment.amount.toString());
-      setTechnicianNotes(mockComplaint.technicianNotes);
+      const fetchComplaint = async () => {
+        setGetLoading(true);
+        console.log("🚀 ~ fetchComplaint ~ fetchComplaint:")
+        try {
+          const response = await api.get(`complaint/${complaintId}`);
+
+          console.log("🚀 ~ fetchComplaint ~ response:", response)
+          const data = response?.data?.data;
+
+          // Convert dates if needed
+          setComplaint({
+            ...data,
+            createdAt: new Date(data.createdAt),
+            updatedAt: new Date(data.updatedAt),
+          });
+
+          setTitle(data.title);
+          setDescription(data.description);
+          setCustomerName(data.customerName);
+          setCustomerPhone(data.customerPhone);
+          setCustomerAddress(data.customerAddress);
+          setAcType(data.acType);
+          setAcBrand(data.acBrand);
+          setAcModel(data.acModel);
+          setAcSerialNumber(data.acSerialNumber);
+          setServiceType(data.serviceType);
+          setPriority(data.priority);
+          setStaus(data.status);
+          setAmount(data?.payment?.amount?.toString() || '');
+          setTechnicianNotes(data.technicianNotes || '');
+
+        } catch (error) {
+          console.error('Error fetching complaint:', error.response?.data || error.message);
+        } finally {
+          setGetLoading(false);
+        }
+      };
+
+      fetchComplaint();
     }
   }, [complaintId]);
+
+  if (getLoading || !complaint) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6200ee" />
+      </View>
+    );
+  }
+
+  // const handleSubmit = async () => {
+  //   if (!title || !description || !customerName || !customerPhone) {
+  //     setError('Please fill in all required fields');
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   setError('');
+
+  //   try {
+  //     const response = await api.post(
+  //       'complaint',
+  //       {
+  //         title,
+  //         description,
+  //         customerName,
+  //         customerPhone,
+  //         customerAddress,
+  //         acType,
+  //         acBrand,
+  //         acModel,
+  //         acSerialNumber,
+  //         serviceType,
+  //         priority,
+  //         status,
+  //         payment: {
+  //           amount: parseFloat(amount) || 0,
+  //           status: 'unpaid',
+  //           method: 'cash',
+  //         },
+  //         technicianNotes,
+  //       }
+  //     );
+
+  //     console.log('Complaint created:', response.data);
+  //     navigation.goBack();
+  //   } catch (err) {
+  //     console.error('API error:', err.response?.data || err.message);
+  //     setError('Failed to create complaint. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleSubmit = async () => {
     if (!title || !description || !customerName || !customerPhone) {
@@ -76,41 +174,50 @@ const ComplaintFormScreen = ({ route, navigation }) => {
     setLoading(true);
     setError('');
 
-    try {
-      const response = await api.post(
-        'complaint',
-        {
-          title,
-          description,
-          customerName,
-          customerPhone,
-          customerAddress,
-          acType,
-          acBrand,
-          acModel,
-          acSerialNumber,
-          serviceType,
-          priority,
-          status,
-          payment: {
-            amount: parseFloat(amount) || 0,
-            status: 'unpaid',
-            method: 'cash',
-          },
-          technicianNotes,
-        }
-      );
+    const payload = {
+      title,
+      description,
+      customerName,
+      customerPhone,
+      customerAddress,
+      acType,
+      acBrand,
+      acModel,
+      acSerialNumber,
+      serviceType,
+      priority,
+      status,
+      payment: {
+        amount: parseFloat(amount) || 0,
+        status: 'unpaid',
+        method: 'cash',
+      },
+      technicianNotes,
+    };
 
-      console.log('Complaint created:', response.data);
-      navigation.goBack();
+    try {
+      let response;
+      if (complaintId) {
+        response = await api.put(`complaint/${complaintId}`, payload);
+        console.log('Complaint updated:', response.data);
+        navigation.navigate('ComplaintDetail', {
+          complaint: {
+            _id: complaintId
+          }
+        });
+      } else {
+        response = await api.post('complaint', payload);
+        console.log('Complaint created:', response.data);
+        navigation.goBack();
+      }
+
     } catch (err) {
       console.error('API error:', err.response?.data || err.message);
-      setError('Failed to create complaint. Please try again.');
+      setError('Failed to submit complaint. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <ScrollView style={styles.container}>
@@ -297,6 +404,11 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     marginBottom: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

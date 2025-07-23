@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText } from 'react-native-paper';
+import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText, ActivityIndicator } from 'react-native-paper';
 import Complaint from '../models/Complaint';
+import api from '../services/api';
 
 // Mock data - replace with your actual data storage
 const mockComplaints = [
@@ -34,73 +35,80 @@ const UpdatePaymentScreen = ({ route, navigation }) => {
 
   // Payment form fields
   const [amount, setAmount] = useState('');
-  const [advanceAmount, setAdvanceAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentStatus, setPaymentStatus] = useState('unpaid')
   const [paymentNotes, setPaymentNotes] = useState('');
 
   useEffect(() => {
-    // In a real app, fetch complaint data from your storage
-    const mockComplaint = new Complaint({
-      id: complaintId,
-      title: 'AC Not Cooling',
-      payment: {
-        amount: 1500,
-        advanceAmount: 500,
-        balanceAmount: 1000,
-        status: 'partial',
-        method: 'cash',
-        paidAt: new Date(),
-        notes: 'Initial payment received',
-      },
-    });
+    const fetchComplaint = async () => {
+      try {
+        const response = await api.get(`complaint/${complaintId}`);
+        const data = response?.data?.data;
 
-    setComplaint(mockComplaint);
-    setAmount(mockComplaint.payment.amount.toString());
-    setAdvanceAmount(mockComplaint.payment.advanceAmount.toString());
-    setPaymentMethod(mockComplaint.payment.method);
-    setPaymentNotes(mockComplaint.payment.notes || '');
-    setLoading(false);
+        const payment = data?.payment || {};
+
+        setComplaint({
+          ...data,
+          createdAt: new Date(data.createdAt),
+          updatedAt: new Date(data.updatedAt),
+        });
+
+        // Populate fields from payment
+        setAmount(payment.amount?.toString() || '');
+        setPaymentMethod(payment.method || 'cash');
+        setPaymentStatus(payment.status || 'unpaid');
+        setPaymentNotes(payment.notes || '');
+      } catch (error) {
+        console.error('Error fetching complaint:', error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaint();
   }, [complaintId]);
 
-  const handleSubmit = () => {
-    if (!amount || !advanceAmount) {
-      setError('Please fill in all required fields');
+  const handleSubmit = async () => {
+    if (!amount) {
+      setError('Please enter the total amount');
       return;
     }
 
     const totalAmount = parseFloat(amount);
-    const advance = parseFloat(advanceAmount);
-    const balance = totalAmount - advance;
 
-    if (advance > totalAmount) {
-      setError('Advance amount cannot be greater than total amount');
+    if (isNaN(totalAmount) || totalAmount < 0) {
+      setError('Amount must be a valid positive number');
       return;
     }
+
+    const updatedPayment = {
+      amount: totalAmount,
+      method: paymentMethod,
+      status: paymentStatus,
+      notes: paymentNotes,
+    };
 
     setLoading(true);
     setError('');
 
-    const updatedPayment = {
-      amount: totalAmount,
-      advanceAmount: advance,
-      balanceAmount: balance,
-      status: balance === 0 ? 'paid' : advance > 0 ? 'partial' : 'pending',
-      method: paymentMethod,
-      paidAt: new Date(),
-      notes: paymentNotes,
-    };
+    try {
+      const response = await api.put(`/complaint/${complaintId}/payment`, updatedPayment);
+      const updatedComplaint = response.data?.data;
 
-    // In a real app, update the payment in your storage
-    console.log('Updating payment:', updatedPayment);
-    
-    setLoading(false);
-    navigation.goBack();
+      console.log('✅ Payment updated:', updatedComplaint);
+      navigation.navigate('ComplaintDetail', { complaint: updatedComplaint });
+    } catch (err) {
+      console.error('❌ Error updating payment:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Failed to update payment');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading || !complaint) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6200ee" />
       </View>
     );
   }
@@ -120,15 +128,6 @@ const UpdatePaymentScreen = ({ route, navigation }) => {
             style={styles.input}
             keyboardType="numeric"
           />
-          <TextInput
-            label="Advance Amount *"
-            value={advanceAmount}
-            onChangeText={setAdvanceAmount}
-            mode="outlined"
-            style={styles.input}
-            keyboardType="numeric"
-          />
-
           <Text style={styles.label}>Payment Method</Text>
           <SegmentedButtons
             value={paymentMethod}
@@ -137,6 +136,16 @@ const UpdatePaymentScreen = ({ route, navigation }) => {
               { value: 'cash', label: 'Cash' },
               { value: 'upi', label: 'UPI' },
               { value: 'bank_transfer', label: 'Bank Transfer' },
+            ]}
+            style={styles.segmentedButtons}
+          />
+          <Text style={styles.label}>Payment Status</Text>
+          <SegmentedButtons
+            value={paymentStatus}
+            onValueChange={setPaymentStatus}
+            buttons={[
+              { value: 'paid', label: 'Paid' },
+              { value: 'unpaid', label: 'Unpaid' },
             ]}
             style={styles.segmentedButtons}
           />
@@ -200,6 +209,11 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     marginBottom: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

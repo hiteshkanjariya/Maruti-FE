@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Text, Button, Chip, Divider, List, IconButton } from 'react-native-paper';
-import Complaint from '../models/Complaint';
+import { Card, Title, Text, Button, Chip, Divider, List, IconButton, ActivityIndicator } from 'react-native-paper';
 import api from '../services/api';
 
 const ComplaintDetailScreen = ({ route, navigation }) => {
@@ -74,8 +73,8 @@ const ComplaintDetailScreen = ({ route, navigation }) => {
 
   if (loading || !complaint) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6200ee" />
       </View>
     );
   }
@@ -269,14 +268,14 @@ const ComplaintDetailScreen = ({ route, navigation }) => {
       <View style={styles.buttonContainer}>
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('ComplaintForm', { complaintId: complaint?.id })}
+          onPress={() => navigation.navigate('ComplaintForm', { complaintId: complaintId })}
           style={styles.button}
         >
           Edit Complaint
         </Button>
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('UpdatePayment', { complaintId: complaint?.id })}
+          onPress={() => navigation.navigate('UpdatePayment', { complaintId: complaintId })}
           style={styles.button}
         >
           Update Payment
@@ -330,6 +329,11 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     marginHorizontal: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
