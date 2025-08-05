@@ -1,46 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Appbar, Card, Button, Text, IconButton, Menu, Divider } from 'react-native-paper';
-import api from '../services/api';
-import { useFocusEffect } from '@react-navigation/native';
 
 const AdminDashboardScreen = ({ navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalComplaints: 0,
-    openComplaints: 0,
-    totalRevenue: 0,
-    pendingPayments: 0,
-  });
-
-  const fetchDashboardStats = async () => {
-    try {
-      const res = await api.get('dashboard');
-
-      const { totalUsers, totalComplaints, openComplaints, totalRevenue, pendingPayments } = res.data;
-
-      setStats({
-        totalUsers,
-        totalComplaints,
-        openComplaints,
-        totalRevenue,
-        pendingPayments,
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-    } finally {
-      setLoading(false);
-    }
+  
+  // Static data for stats
+  const stats = {
+    totalUsers: 2,
+    totalComplaints: 3,
+    openComplaints: 1,
+    totalRevenue: 15000,
+    pendingPayments: 5000,
   };
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchDashboardStats();
-    }, [])
-  );
-
 
   const handleLogout = () => {
     navigation.replace('Login');
@@ -53,14 +25,6 @@ const AdminDashboardScreen = ({ navigation }) => {
   const handleAddUser = () => {
     navigation.navigate('UserForm');
   };
-
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -75,37 +39,37 @@ const AdminDashboardScreen = ({ navigation }) => {
           onDismiss={() => setMenuVisible(false)}
           anchor={{ x: 0, y: 0 }}
         >
-          <Menu.Item
+          <Menu.Item 
             onPress={() => {
               setMenuVisible(false);
               handleAddUser();
-            }}
-            title="Add User"
+            }} 
+            title="Add User" 
             leadingIcon="account-plus"
           />
-          <Menu.Item
+          <Menu.Item 
             onPress={() => {
               setMenuVisible(false);
               navigation.navigate('ComplaintForm');
-            }}
-            title="New Complaint"
+            }} 
+            title="New Complaint" 
             leadingIcon="plus-circle"
           />
           <Divider />
-          <Menu.Item
+          <Menu.Item 
             onPress={() => {
               setMenuVisible(false);
               handleProfile();
-            }}
-            title="Profile"
+            }} 
+            title="Profile" 
             leadingIcon="account"
           />
-          <Menu.Item
+          <Menu.Item 
             onPress={() => {
               setMenuVisible(false);
               handleLogout();
-            }}
-            title="Logout"
+            }} 
+            title="Logout" 
             leadingIcon="logout"
           />
         </Menu>
@@ -189,11 +153,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f6f6f6',
   },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   scrollView: {
     flex: 1,
   },
@@ -225,4 +184,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdminDashboardScreen;
+export default AdminDashboardScreen; 

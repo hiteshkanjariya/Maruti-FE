@@ -120,7 +120,7 @@ const ComplaintListScreen = ({ navigation }) => {
         style={styles.searchBar}
       />
 
-      <View style={styles.filterContainer}>
+      {/* <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['all', 'open', 'in_progress', 'closed'].map((status) => (
             <Chip
@@ -146,7 +146,7 @@ const ComplaintListScreen = ({ navigation }) => {
             </Chip>
           ))}
         </ScrollView>
-      </View>
+      </View> */}
 
       {loading ? (
         <View style={styles.loadingContainer}>

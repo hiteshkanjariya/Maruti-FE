@@ -199,16 +199,7 @@ const ComplaintDetailScreen = ({ route, navigation }) => {
             description={`₹${complaint?.payment?.amount}`}
             left={props => <List.Icon {...props} icon="currency-inr" />}
           />
-          <List.Item
-            title="Advance Amount"
-            description={`₹${complaint?.payment?.advanceAmount}`}
-            left={props => <List.Icon {...props} icon="cash" />}
-          />
-          <List.Item
-            title="Balance Amount"
-            description={`₹${complaint?.payment?.balanceAmount}`}
-            left={props => <List.Icon {...props} icon="wallet" />}
-          />
+
           <List.Item
             title="Payment Status"
             description={
