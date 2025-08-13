@@ -14,6 +14,7 @@ import ComplaintListScreen from '../screens/ComplaintListScreen';
 import ComplaintDetailScreen from '../screens/ComplaintDetailScreen';
 import ComplaintFormScreen from '../screens/ComplaintFormScreen';
 import UpdatePaymentScreen from '../screens/UpdatePaymentScreen';
+import AssignComplaintScreen from '../screens/AssignComplaintScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -48,38 +49,38 @@ const AdminTabs = () => (
       tabBarInactiveTintColor: 'gray',
     })}
   >
-    <Tab.Screen 
-      name="AdminDashboard" 
-      component={AdminDashboardScreen} 
-      options={{ 
+    <Tab.Screen
+      name="AdminDashboard"
+      component={AdminDashboardScreen}
+      options={{
         title: 'Dashboard',
-        headerShown: false 
-      }} 
+        headerShown: false
+      }}
     />
-    <Tab.Screen 
-      name="Users" 
-      component={UserListScreen} 
-      options={{ 
+    <Tab.Screen
+      name="Users"
+      component={UserListScreen}
+      options={{
         title: 'Users',
-        headerShown: false 
-      }} 
+        headerShown: false
+      }}
     />
-    <Tab.Screen 
-      name="Complaints" 
-      component={ComplaintListScreen} 
-      options={{ 
+    <Tab.Screen
+      name="Complaints"
+      component={ComplaintListScreen}
+      options={{
         title: 'Complaints',
-        headerShown: false 
-      }} 
+        headerShown: false
+      }}
     />
-    <Tab.Screen 
+    {/* <Tab.Screen 
       name="Profile" 
       component={UserFormScreen} 
       options={{ 
         title: 'Profile',
         headerShown: false 
       }} 
-    />
+    /> */}
   </Tab.Navigator>
 );
 
@@ -110,30 +111,30 @@ const UserTabs = () => (
       tabBarInactiveTintColor: 'gray',
     })}
   >
-    <Tab.Screen 
-      name="UserDashboard" 
-      component={UserDashboardScreen} 
-      options={{ 
+    <Tab.Screen
+      name="UserDashboard"
+      component={UserDashboardScreen}
+      options={{
         title: 'Dashboard',
-        headerShown: false 
-      }} 
+        headerShown: false
+      }}
     />
-    <Tab.Screen 
-      name="MyComplaints" 
-      component={ComplaintListScreen} 
-      options={{ 
-        title: 'My Complaints',
-        headerShown: false 
-      }} 
+    <Tab.Screen
+      name="MyComplaints"
+      component={ComplaintListScreen}
+      options={{
+        title: 'All Complaints',
+        headerShown: false
+      }}
     />
-    <Tab.Screen 
-      name="Profile" 
-      component={UserFormScreen} 
-      options={{ 
+    {/* <Tab.Screen
+      name="Profile"
+      component={UserFormScreen}
+      options={{
         title: 'Profile',
-        headerShown: false 
-      }} 
-    />
+        headerShown: false
+      }}
+    /> */}
   </Tab.Navigator>
 );
 
@@ -151,40 +152,45 @@ const AppNavigator = () => (
         },
       }}
     >
-      <Stack.Screen 
-        name="Login" 
-        component={LoginScreen} 
-        options={{ headerShown: false }} 
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="AdminFlow" 
-        component={AdminTabs} 
-        options={{ headerShown: false }} 
+      <Stack.Screen
+        name="AdminFlow"
+        component={AdminTabs}
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="UserFlow" 
-        component={UserTabs} 
-        options={{ headerShown: false }} 
+      <Stack.Screen
+        name="UserFlow"
+        component={UserTabs}
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="UserForm" 
-        component={UserFormScreen} 
-        options={{ title: 'User Details' }} 
+      <Stack.Screen
+        name="UserForm"
+        component={UserFormScreen}
+        options={{ title: 'User Details' }}
       />
-      <Stack.Screen 
-        name="ComplaintForm" 
-        component={ComplaintFormScreen} 
-        options={{ title: 'Complaint Details' }} 
+      <Stack.Screen
+        name="ComplaintForm"
+        component={ComplaintFormScreen}
+        options={{ title: 'Complaint Details' }}
       />
-      <Stack.Screen 
-        name="ComplaintDetail" 
-        component={ComplaintDetailScreen} 
-        options={{ title: 'Complaint Details' }} 
+      <Stack.Screen
+        name="ComplaintDetail"
+        component={ComplaintDetailScreen}
+        options={{ title: 'Complaint Details' }}
       />
-      <Stack.Screen 
-        name="UpdatePayment" 
-        component={UpdatePaymentScreen} 
-        options={{ title: 'Update Payment' }} 
+      <Stack.Screen
+        name="UpdatePayment"
+        component={UpdatePaymentScreen}
+        options={{ title: 'Update Payment' }}
+      />
+      <Stack.Screen
+        name="AssignComplaint"
+        component={AssignComplaintScreen}
+        options={{ title: 'Assign Complaint' }}
       />
     </Stack.Navigator>
   </NavigationContainer>

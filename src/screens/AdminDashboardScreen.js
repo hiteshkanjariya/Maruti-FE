@@ -145,7 +145,7 @@ const AdminDashboardScreen = ({ navigation }) => {
           </Card>
         </View>
 
-        <View style={styles.actionsContainer}>
+        {/* <View style={styles.actionsContainer}>
           <Button
             mode="contained"
             icon="account-group"
@@ -178,7 +178,7 @@ const AdminDashboardScreen = ({ navigation }) => {
           >
             Add User
           </Button>
-        </View>
+        </View> */}
       </ScrollView>
     </View>
   );

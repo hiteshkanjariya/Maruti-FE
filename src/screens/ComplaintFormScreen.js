@@ -27,6 +27,8 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   const [status, setStaus] = useState("open");
   const [amount, setAmount] = useState('');
   const [technicianNotes, setTechnicianNotes] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [users, setUsers] = useState([]);
 
   // useEffect(() => {
   //   if (complaintId) {
@@ -69,6 +71,8 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   //   }
   // }, [complaintId]);
   useEffect(() => {
+    fetchUsers();
+    
     if (complaintId) {
 
       const fetchComplaint = async () => {
@@ -101,6 +105,7 @@ const ComplaintFormScreen = ({ route, navigation }) => {
           setStaus(data.status);
           setAmount(data?.payment?.amount?.toString() || '');
           setTechnicianNotes(data.technicianNotes || '');
+          setAssignedTo(data?.assignedTo?._id || '');
 
         } catch (error) {
           console.error('Error fetching complaint:', error.response?.data || error.message);
@@ -112,6 +117,17 @@ const ComplaintFormScreen = ({ route, navigation }) => {
       fetchComplaint();
     }
   }, [complaintId]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/user');
+      // Filter out admin users and only show technicians/users who can be assigned complaints
+      const filteredUsers = response.data.data.filter(user => user.role !== 'admin');
+      setUsers(filteredUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   if (getLoading || !complaint) {
     return (
@@ -193,6 +209,7 @@ const ComplaintFormScreen = ({ route, navigation }) => {
         method: 'cash',
       },
       technicianNotes,
+      assignedTo: assignedTo || undefined,
     };
 
     try {
@@ -353,6 +370,16 @@ const ComplaintFormScreen = ({ route, navigation }) => {
             style={styles.input}
             multiline
             numberOfLines={3}
+          />
+
+          <Text style={styles.sectionTitle}>Assignment</Text>
+          <TextInput
+            label="Assigned To (User ID)"
+            value={assignedTo}
+            onChangeText={setAssignedTo}
+            mode="outlined"
+            style={styles.input}
+            placeholder="Enter user ID to assign"
           />
 
           {error ? <HelperText type="error">{error}</HelperText> : null}

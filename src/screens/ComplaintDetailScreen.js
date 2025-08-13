@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Title, Text, Button, Chip, Divider, List, IconButton, ActivityIndicator } from 'react-native-paper';
 import api from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ComplaintDetailScreen = ({ route, navigation }) => {
   const complaintId = route.params.complaint?._id;
@@ -46,31 +47,32 @@ const ComplaintDetailScreen = ({ route, navigation }) => {
   //   setComplaint(mockComplaint);
   //   setLoading(false);
   // }, [complaintId]);
-  useEffect(() => {
-    const fetchComplaint = async () => {
-      console.log("🚀 ~ fetchComplaint ~ fetchComplaint:")
-      try {
-        const response = await api.get(`complaint/${complaintId}`);
 
-        console.log("🚀 ~ fetchComplaint ~ response:", response)
-        const data = response?.data?.data;
+  const fetchComplaint = async () => {
+    console.log("🚀 ~ fetchComplaint ~ fetchComplaint:")
+    try {
+      const response = await api.get(`complaint/${complaintId}`);
 
-        // Convert dates if needed
-        setComplaint({
-          ...data,
-          createdAt: new Date(data.createdAt),
-          updatedAt: new Date(data.updatedAt),
-        });
-      } catch (error) {
-        console.error('Error fetching complaint:', error.response?.data || error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      console.log("🚀 ~ fetchComplaint ~ response:", response)
+      const data = response?.data?.data;
 
-    fetchComplaint();
-  }, [complaintId]);
-
+      // Convert dates if needed
+      setComplaint({
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      });
+    } catch (error) {
+      console.error('Error fetching complaint:', error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useFocusEffect(
+    useCallback(() => {
+      fetchComplaint();
+    }, [complaintId])
+  );
   if (loading || !complaint) {
     return (
       <View style={styles.loadingContainer}>
@@ -163,6 +165,23 @@ const ComplaintDetailScreen = ({ route, navigation }) => {
             description={complaint?.acSerialNumber}
             left={props => <List.Icon {...props} icon="barcode" />}
           />
+
+          <Divider style={styles.divider} />
+
+          <Text style={styles.sectionTitle}>Assignment</Text>
+          {complaint?.assignedTo ? (
+            <List.Item
+              title="Assigned To"
+              description={`${complaint.assignedTo.name} (${complaint.assignedTo.phone})`}
+              left={props => <List.Icon {...props} icon="account-check" />}
+            />
+          ) : (
+            <List.Item
+              title="Assigned To"
+              description="Not assigned"
+              left={props => <List.Icon {...props} icon="account-question" />}
+            />
+          )}
 
           <Divider style={styles.divider} />
 
@@ -271,6 +290,16 @@ const ComplaintDetailScreen = ({ route, navigation }) => {
         >
           Update Payment
         </Button>
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('AssignComplaint', {
+            complaintId: complaintId,
+            currentAssignedUser: complaint?.assignedTo
+          })}
+          style={styles.button}
+        >
+          Assign Complaint
+        </Button>
       </View>
     </ScrollView>
   );
@@ -313,13 +342,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: 'column',
     padding: 16,
+    gap: 12,
   },
   button: {
-    flex: 1,
-    marginHorizontal: 8,
+    marginHorizontal: 0,
   },
   loadingContainer: {
     flex: 1,

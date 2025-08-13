@@ -42,6 +42,8 @@ const LoginScreen = ({ navigation }) => {
         setError('Unexpected response from server');
       }
     } catch (err) {
+      console.log("🚀 ~ handleLogin ~ err.response?.data?.error:", err)
+
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {

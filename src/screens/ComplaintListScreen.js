@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, FlatList, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import {
   Appbar,
   Card,
@@ -10,7 +10,8 @@ import {
   Searchbar,
   Chip,
   Menu,
-  Divider
+  Divider,
+  Button
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
@@ -157,32 +158,50 @@ const ComplaintListScreen = ({ navigation }) => {
           data={filteredComplaints}
           keyExtractor={(item) => item._id || item.id}
           renderItem={({ item }) => (
-            <Card style={styles.card} onPress={() => handleViewDetails(item)}>
+            <Card style={styles.card}>
               <Card.Content>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Chip
-                    mode="outlined"
-                    style={[styles.statusChip, { borderColor: getStatusColor(item.status) }]}
-                    textStyle={{ color: getStatusColor(item.status) }}
-                  >
-                    {item?.status?.replace('_', ' ').toUpperCase()}
-                  </Chip>
-                </View>
-                <View style={styles.cardDetails}>
-                  <Text style={styles.assignedTo}>Assigned to: {item.assignedUser}</Text>
-                  <Chip
-                    mode="outlined"
-                    style={[styles.priorityChip, { borderColor: getPriorityColor(item.priority) }]}
-                    textStyle={{ color: getPriorityColor(item.priority) }}
-                  >
-                    {item.priority.toUpperCase()}
-                  </Chip>
-                </View>
-                <Text style={styles.date}>
-                  Date: {new Date(item.date || item.createdAt).toLocaleDateString()}
-                </Text>
+                <TouchableOpacity onPress={() => handleViewDetails(item)}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.title}>{item.title}</Text>
+                    <Chip
+                      mode="outlined"
+                      style={[styles.statusChip, { borderColor: getStatusColor(item.status) }]}
+                      textStyle={{ color: getStatusColor(item.status) }}
+                    >
+                      {item?.status?.replace('_', ' ').toUpperCase()}
+                    </Chip>
+                  </View>
+                  <View style={styles.cardDetails}>
+                    <Text style={styles.assignedTo}>
+                      Assigned to: {item.assignedTo?.name || item?.assignedUser || 'Not assigned'}
+                    </Text>
+                    <Chip
+                      mode="outlined"
+                      style={[styles.priorityChip, { borderColor: getPriorityColor(item.priority) }]}
+                      textStyle={{ color: getPriorityColor(item.priority) }}
+                    >
+                      {item.priority.toUpperCase()}
+                    </Chip>
+                  </View>
+                  <Text style={styles.date}>
+                    Date: {new Date(item.date || item.createdAt).toLocaleDateString()}
+                  </Text>
+                </TouchableOpacity>
               </Card.Content>
+              <Card.Actions>
+                {item?.canAssign && (
+                  <Button
+                    mode="outlined"
+                    onPress={() => navigation.navigate('AssignComplaint', {
+                      complaintId: item._id || item.id,
+                      currentAssignedUser: item.assignedTo
+                    })}
+                    icon="account-plus"
+                  >
+                    Assign
+                  </Button>
+                )}
+              </Card.Actions>
             </Card>
           )}
           ListEmptyComponent={
@@ -196,7 +215,7 @@ const ComplaintListScreen = ({ navigation }) => {
       <FAB
         style={styles.fab}
         icon="plus"
-        label="Add"
+        // label="Add"
         onPress={() => navigation.navigate('ComplaintForm')}
       />
 
