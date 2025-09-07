@@ -12,15 +12,15 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   const [error, setError] = useState('');
 
   // Form fields
-  const [title, setTitle] = useState('AC Not Cooling');
-  const [description, setDescription] = useState('The AC is not cooling properly');
-  const [customerName, setCustomerName] = useState('John Doe');
-  const [customerPhone, setCustomerPhone] = useState('1234567890');
-  const [customerAddress, setCustomerAddress] = useState('123 Main St');
-  const [acType, setAcType] = useState('Split');
-  const [acBrand, setAcBrand] = useState('LG');
-  const [acModel, setAcModel] = useState('XYZ123');
-  const [acSerialNumber, setAcSerialNumber] = useState('SN123456');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [acType, setAcType] = useState('');
+  const [acBrand, setAcBrand] = useState('');
+  const [acModel, setAcModel] = useState('');
+  const [acSerialNumber, setAcSerialNumber] = useState('');
   const [serviceType, setServiceType] = useState('repair');
   const [priority, setPriority] = useState('medium');
   const [status, setStaus] = useState("open");
