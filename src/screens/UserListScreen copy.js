@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, Text } from 'react-native';
-import { Appbar, List, FAB, Snackbar, Card, Avatar, Button, Portal, Dialog, Paragraph, ActivityIndicator, Chip, IconButton } from 'react-native-paper';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { Appbar, List, FAB, Snackbar, Card, Avatar, Button, Portal, Dialog, Paragraph, ActivityIndicator, Chip } from 'react-native-paper';
 import api from '../services/api';
 
 const UserListScreen = ({ navigation }) => {
@@ -32,7 +31,7 @@ const UserListScreen = ({ navigation }) => {
     }
   };
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => fetchUsers(false));
+    const unsubscribe = navigation.addListener('focus', fetchUsers);
     return unsubscribe;
   }, [navigation]);
   const handleEdit = (user) => navigation.navigate('UserForm', { user });
@@ -72,19 +71,57 @@ const UserListScreen = ({ navigation }) => {
 
 
   const renderUserCard = ({ item }) => (
-      <Card style={styles.card}>
-        <List.Item
-          title={item.name}
-          description={`Phone: ${item.phone} | Role: ${item.role}`}
-          left={props => <List.Icon {...props} icon={item.role === 'admin' ? 'account-tie' : 'account'} />}
-          right={props => (
-            <View style={{ flexDirection: 'row' }}>
-              <IconButton icon="pencil" onPress={() => handleEdit(item)} />
-              <IconButton icon="delete" onPress={() => handleDeletePress(item)} iconColor="#d32f2f" />
+    <Card style={styles.card} elevation={2}>
+      <Card.Content>
+        <View style={styles.cardHeader}>
+          <View style={styles.userInfo}>
+            <Avatar.Text 
+              size={50} 
+              label={item.name.charAt(0).toUpperCase()}
+              style={[
+                styles.avatar,
+                { backgroundColor: item.role === 'admin' ? '#6200ee' : '#03dac6' }
+              ]}
+            />
+            <View style={styles.userDetails}>
+              <List.Item
+                title={item.name}
+                titleStyle={styles.userName}
+                description={`${item.phone}`}
+                descriptionStyle={styles.userPhone}
+                left={() => null}
+                right={() => (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={() => handleEdit(item)}
+                    >
+                      <List.Icon icon="pencil" color="#6200ee" size={20} />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={() => handleDeletePress(item)}
+                    >
+                      <List.Icon icon="delete" color="#d32f2f" size={20} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
             </View>
-          )}
-        />
-      </Card>
+          </View>
+          <Chip 
+            mode="outlined"
+            style={[
+              styles.roleChip,
+              { backgroundColor: item.role === 'admin' ? '#e3f2fd' : '#e8f5e8' }
+            ]}
+            textStyle={{ color: item.role === 'admin' ? '#1976d2' : '#388e3c' }}
+          >
+            {item.role.toUpperCase()}
+          </Chip>
+        </View>
+      </Card.Content>
+    </Card>
   );
 
   if (loading) {
@@ -134,7 +171,7 @@ const UserListScreen = ({ navigation }) => {
       <FAB
         style={styles.fab}
         icon="plus"
-        // label="Add User"
+        label="Add User"
         onPress={() => navigation.navigate('UserForm')}
       />
 
@@ -152,7 +189,8 @@ const UserListScreen = ({ navigation }) => {
           <Dialog.Title>Delete User</Dialog.Title>
           <Dialog.Content>
             <Paragraph>
-              Are you sure you want to delete <Text style={{ fontWeight: 'bold' }}>{userToDelete?.name}</Text>? This action cannot be undone.
+              Are you sure you want to delete <strong>{userToDelete?.name}</strong>? 
+              This action cannot be undone.
             </Paragraph>
           </Dialog.Content>
           <Dialog.Actions>
@@ -180,8 +218,15 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#f8f9fa' 
   },
-  header: { backgroundColor: '#6200ee', elevation: 4 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  header: {
+    backgroundColor: '#6200ee',
+    elevation: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -196,7 +241,51 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 80,
   },
-  card: { margin: 10 },
+  card: { 
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  userPhone: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButton: {
+    padding: 8,
+    marginLeft: 4,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  roleChip: {
+    marginLeft: 8,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -219,7 +308,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
-    // backgroundColor: '#6200ee',
+    backgroundColor: '#6200ee',
   },
   snackbar: {
     backgroundColor: '#333',

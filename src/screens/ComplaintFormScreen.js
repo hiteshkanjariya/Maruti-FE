@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText, ActivityIndicator } from 'react-native-paper';
+import { Card, Title, TextInput, Button, Text, SegmentedButtons, HelperText, ActivityIndicator, Portal, Dialog, List, Chip, Searchbar } from 'react-native-paper';
 import Complaint from '../models/Complaint';
 import api from '../services/api';
 
 const ComplaintFormScreen = ({ route, navigation }) => {
   const { complaintId } = route.params || {};
-  console.log("🚀 ~ ComplaintFormScreen ~ complaintId:", complaintId)
   const [complaint, setComplaint] = useState(new Complaint());
   const [loading, setLoading] = useState(false);
   const [getLoading, setGetLoading] = useState(false);
@@ -29,6 +28,9 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   const [technicianNotes, setTechnicianNotes] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [users, setUsers] = useState([]);
+  const [assigneePickerVisible, setAssigneePickerVisible] = useState(false);
+  const [assigneeSearch, setAssigneeSearch] = useState('');
+  const [usersLoading, setUsersLoading] = useState(false);
 
   // useEffect(() => {
   //   if (complaintId) {
@@ -72,7 +74,7 @@ const ComplaintFormScreen = ({ route, navigation }) => {
   // }, [complaintId]);
   useEffect(() => {
     fetchUsers();
-    
+
     if (complaintId) {
 
       const fetchComplaint = async () => {
@@ -120,12 +122,15 @@ const ComplaintFormScreen = ({ route, navigation }) => {
 
   const fetchUsers = async () => {
     try {
+      setUsersLoading(true);
       const response = await api.get('/user');
       // Filter out admin users and only show technicians/users who can be assigned complaints
       const filteredUsers = response.data.data.filter(user => user.role !== 'admin');
       setUsers(filteredUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -235,6 +240,8 @@ const ComplaintFormScreen = ({ route, navigation }) => {
       setLoading(false);
     }
   };
+
+  const selectedUser = users.find(u => u._id === assignedTo);
 
   return (
     <ScrollView style={styles.container}>
@@ -373,14 +380,74 @@ const ComplaintFormScreen = ({ route, navigation }) => {
           />
 
           <Text style={styles.sectionTitle}>Assignment</Text>
+          <Text style={styles.helper}>Assign to a technician/user</Text>
           <TextInput
-            label="Assigned To (User ID)"
-            value={assignedTo}
-            onChangeText={setAssignedTo}
+            label="Assigned To"
+            value={selectedUser ? `${selectedUser.name} (${selectedUser.phone})` : ''}
             mode="outlined"
             style={styles.input}
-            placeholder="Enter user ID to assign"
+            placeholder="Select assignee"
+            editable={false}
+            right={<TextInput.Icon icon="chevron-down" onPress={() => setAssigneePickerVisible(true)} />}
+            onPressIn={() => setAssigneePickerVisible(true)}
           />
+          {selectedUser ? (
+            <View style={styles.assigneeRow}>
+              <List.Item
+                title={selectedUser.name}
+                description={`Phone: ${selectedUser.phone}  |  Role: ${selectedUser.role}`}
+                left={props => <List.Icon {...props} icon="account" />}
+              />
+              <Chip icon="close" mode="outlined" onPress={() => setAssignedTo('')} style={styles.clearChip}>
+                Clear
+              </Chip>
+            </View>
+          ) : null}
+
+          <Portal>
+            <Dialog visible={assigneePickerVisible} onDismiss={() => setAssigneePickerVisible(false)}>
+              <Dialog.Title>Select Assignee</Dialog.Title>
+              <Dialog.Content>
+                <Searchbar
+                  placeholder="Search users by name or phone..."
+                  value={assigneeSearch}
+                  onChangeText={setAssigneeSearch}
+                  style={{ marginBottom: 8 }}
+                />
+                {usersLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" />
+                  </View>
+                ) : (
+                  <List.Section>
+                    {users
+                      .filter(u =>
+                        (u.name || '').toLowerCase().includes(assigneeSearch.toLowerCase()) ||
+                        (u.phone || '').includes(assigneeSearch)
+                      )
+                      .map(u => (
+                        <List.Item
+                          key={u._id}
+                          title={u.name}
+                          description={`Phone: ${u.phone}`}
+                          left={props => <List.Icon {...props} icon="account" />}
+                          onPress={() => {
+                            setAssignedTo(u._id);
+                            setAssigneePickerVisible(false);
+                          }}
+                        />
+                      ))}
+                    {users.length === 0 && (
+                      <Text>No users available to assign.</Text>
+                    )}
+                  </List.Section>
+                )}
+              </Dialog.Content>
+              <Dialog.Actions>
+                <Button onPress={() => setAssigneePickerVisible(false)}>Close</Button>
+              </Dialog.Actions>
+            </Dialog>
+          </Portal>
 
           {error ? <HelperText type="error">{error}</HelperText> : null}
 
@@ -420,6 +487,20 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
+  },
+  helper: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 6,
+  },
+  assigneeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  clearChip: {
+    alignSelf: 'flex-start',
   },
   label: {
     fontSize: 16,

@@ -11,10 +11,10 @@ const ROLES = [
 
 const UserFormScreen = ({ navigation, route }) => {
   const { user } = route.params || {};
-  const [name, setName] = useState(user?.name || 'hk');
-  const [phone, setPhone] = useState(user?.phone || '9904186384');
-  const [password, setPassword] = useState('hk');
-  const [confirmPassword, setConfirmPassword] = useState('hk');
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [password, setPassword] = useState();
+  const [confirmPassword, setConfirmPassword] = useState();
   const [role, setRole] = useState(user?.role || 'user');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -27,13 +27,9 @@ const UserFormScreen = ({ navigation, route }) => {
   const handleSave = async () => {
     setError('');
 
-    if (!name || !phone || !password || !confirmPassword) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    // Common validation
+    if (!name || !phone) {
+      setError('Please fill in all required fields');
       return;
     }
 
@@ -41,15 +37,37 @@ const UserFormScreen = ({ navigation, route }) => {
       setError('Please enter a valid phone number');
       return;
     }
-    setLoading(true); // Start loading
+
+    // Password validation
+    if (!user?._id) {
+      // New user → password is required
+      if (!password || !confirmPassword) {
+        setError('Password is required');
+        return;
+      }
+    }
+
+    if (password || confirmPassword) {
+      // If updating and user provided a password → validate it
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+    }
+
+    setLoading(true);
 
     try {
       const payload = {
         name,
         phone,
-        password,
         role,
       };
+
+      // Only include password if provided
+      if (password) {
+        payload.password = password;
+      }
 
       let response;
       if (user?._id) {
@@ -70,7 +88,7 @@ const UserFormScreen = ({ navigation, route }) => {
         err.response?.data?.message || 'Failed to save user. Please try again.';
       setError(msg);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 

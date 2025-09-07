@@ -11,7 +11,10 @@ import {
   Chip,
   Menu,
   Divider,
-  Button
+  Button,
+  Portal,
+  Dialog,
+  Paragraph
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
@@ -26,6 +29,9 @@ const ComplaintListScreen = ({ navigation }) => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [complaintToDelete, setComplaintToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -43,6 +49,15 @@ const ComplaintListScreen = ({ navigation }) => {
       case 'low': return '#4CAF50';
       default: return '#757575';
     }
+  };
+
+  const formatDateDDMMYYYYHyphen = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
   };
 
   const fetchComplaints = async () => {
@@ -66,6 +81,35 @@ const ComplaintListScreen = ({ navigation }) => {
       fetchComplaints();
     }, [])
   );
+
+  const handleDeletePress = (item) => {
+    setComplaintToDelete(item);
+    setDeleteDialogVisible(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!complaintToDelete) return;
+    try {
+      setDeleting(true);
+      await api.delete(`/complaint/${complaintToDelete._id || complaintToDelete.id}`);
+      setSnackbarMsg('Complaint deleted successfully');
+      setSnackbarVisible(true);
+      setDeleteDialogVisible(false);
+      setComplaintToDelete(null);
+      fetchComplaints();
+    } catch (error) {
+      console.error(error);
+      setSnackbarMsg(error?.response?.data?.message || 'Failed to delete complaint');
+      setSnackbarVisible(true);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogVisible(false);
+    setComplaintToDelete(null);
+  };
 
   const filteredComplaints = complaints?.filter((complaint) => {
     const matchesSearch =
@@ -184,7 +228,7 @@ const ComplaintListScreen = ({ navigation }) => {
                     </Chip>
                   </View>
                   <Text style={styles.date}>
-                    Date: {new Date(item.date || item.createdAt).toLocaleDateString()}
+                    Date: {formatDateDDMMYYYYHyphen(item.date || item.createdAt)}
                   </Text>
                 </TouchableOpacity>
               </Card.Content>
@@ -201,6 +245,15 @@ const ComplaintListScreen = ({ navigation }) => {
                     Assign
                   </Button>
                 )}
+                <Button
+                  mode="text"
+                  onPress={() => handleDeletePress(item)}
+                  icon="delete"
+                  textColor="#d32f2f"
+                  style={{ marginLeft: 8 }}
+                >
+                  Delete
+                </Button>
               </Card.Actions>
             </Card>
           )}
@@ -226,6 +279,31 @@ const ComplaintListScreen = ({ navigation }) => {
       >
         {snackbarMsg}
       </Snackbar>
+
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={handleDeleteCancel}>
+          <Dialog.Title>Delete Complaint</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph>
+              Are you sure you want to delete this complaint? This action cannot be undone.
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={handleDeleteCancel} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleDeleteConfirm}
+              loading={deleting}
+              disabled={deleting}
+              buttonColor="#d32f2f"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
